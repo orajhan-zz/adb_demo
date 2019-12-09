@@ -41,10 +41,8 @@ def get_streaming_ocid(stream_admin_client, compartment_id):
 
 #Start Streaming
 def put_messages_streaming(stream_client, streaming_ocid, data):
-    #Record start time
+
     print("Streaming Starts at {}".format(time.strftime("%Y-%m-%d %H:%M:%S")))
-    #total_records = len(list(data))
-    #print("Total records: {}".format(total_records))
 
     # Stream the content of the object into my code
     put_messages_details = []
@@ -54,11 +52,9 @@ def put_messages_streaming(stream_client, streaming_ocid, data):
         for row in data[i:i + batch_size]:
             try:
                 # Encode key and value, Append into list
-                #encoded_value = base64.urlsafe_b64encode(str(row).encode('UTF-8')).decode('ascii')
                 encoded_value = b64encode(str(row).encode()).decode()
                 # Append into list
                 put_messages_details.append(oci.streaming.models.PutMessagesDetailsEntry(value=encoded_value))
-
                 # Create Message Details with list
                 messages = oci.streaming.models.PutMessagesDetails(messages=put_messages_details)
 
@@ -122,16 +118,11 @@ def do(signer, bucket_name):
         print("Searching for bucket and object", file=sys.stderr)
 
         object_storage = oci.object_storage.ObjectStorageClient(config={}, signer=signer)
-
-        # namespace = os.environ.get("OCI_NAMESPACE")
         namespace = object_storage.get_namespace().data
         all_objects = object_storage.list_objects(namespace, bucket_name).data
         for new in range(len(all_objects.objects)):
             # Get object name
-            # object_name = object_storage.list_objects(namespace, bucket_name).data.objects[0].name
             object_name = all_objects.objects[new].name
-            # print(object_name)
-
             if str(object_name).lower().endswith('.csv'):
                 # conversion from CSV to JSON
                 data = conversionCSVtoJSON(namespace, object_storage, bucket_name, object_name)
