@@ -1,0 +1,12 @@
+schema_version: 20180708
+name: streamingtoadw
+version: 0.0.3
+runtime: python
+entrypoint: /python/bin/fdk /function/func.py handler
+memory: 1024
+timeout: 120
+config:
+  OCI_BUCKETNAME: your_bucket
+  OCI_COMPARTMENT: your_compartment
+  OCI_NAMESPACE: your_namespace
+  batch_size: "1000"
