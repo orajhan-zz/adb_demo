@@ -8,10 +8,9 @@ import ast
 from base64 import b64encode, b64decode
 
 
-#ADW URL
-#GET, POST, PUT, DELETE
-#url = ["https://guk9elytviiyjhz-devadw.adb.uk-london-1.oraclecloudapps.com/ords/apacpursuit/demo/customer_stories/","https://dyrxoqtggbiyohc-devadwph.adb.us-phoenix-1.oraclecloudapps.com/ords/APACPURSUIT/demo/customer_stories/"]
-url = ["https://yosxkmz2mi71qsi-adwoac0.adb.us-ashburn-1.oraclecloudapps.com/ords/ADB_DEMO/loans/loans/"]
+#Replace with your ADW URL
+#url = ["url1","url2"]
+url = ["Your_url"]
 
 
 #delete all data in ADW. Start from scratch
@@ -33,8 +32,6 @@ def post_ords(url, decoded_list_messages):
 #Get Streaming OCID
 def get_streaming_ocid(stream_admin_client, compartment_id):
     list_streams = stream_admin_client.list_streams(compartment_id, lifecycle_state=oci.streaming.models.StreamSummary.LIFECYCLE_STATE_ACTIVE)
-    #print(list_streams.data)
-
     if list_streams.data:
         # If we find an active stream with the correct name, we'll use it.
         print("Streaming Name : {}".format(list_streams.data[0].name))
@@ -50,21 +47,19 @@ def get_cursor_by_partition(stream_client, streaming_ocid, partition):
     cursor = response.data.value
     return cursor
 
-
+#Get cursor by group
 def get_cursor_by_group(stream_client, streaming_ocid, group_name, instance_name):
     print(" Creating a cursor for group {}, instance {}".format(group_name, instance_name))
     cursor_details = oci.streaming.models.CreateGroupCursorDetails(group_name=group_name,instance_name=instance_name,type=oci.streaming.models.CreateGroupCursorDetails.TYPE_TRIM_HORIZON, commit_on_get=True)
     response = stream_client.create_group_cursor(streaming_ocid, cursor_details)
     return response.data.value
 
+#read data in streaming to update ADW
 def consume_messages_streaming(stream_client, streaming_ocid, group_cursor):
     #Get Cursor
     cursor = group_cursor
     decoded_list_messages = []
     while True:
-        #test with limit 10 to show how consumer group works across partitions
-        #get_response = stream_client.get_messages(streaming_ocid, cursor, limit=1000)
-
         #By default, the service returns as many messages as possible. Consider your average message size to help avoid exceeding throughput on the stream.
         get_response = stream_client.get_messages(streaming_ocid, cursor)
         if not get_response.data:
@@ -101,13 +96,12 @@ def consume_messages_streaming(stream_client, streaming_ocid, group_cursor):
 
 if __name__ == "__main__":
     #change bucketname to yours
-    bucket_name = "adb_bucket"
+    bucket_name = "Your bucket"
     #change compartment ocid to yours
-    compartment_id = 'ocid1.compartment.oc1..aaaaaaaaff2l3j3wtyzdytq5iirpqeytt5mfjlfh5jhoys5d5huahm4pmx3a'
+    compartment_id = 'Your Compartment'
     signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
     identity_client = oci.identity.IdentityClient(config={}, signer=signer)
 
-    #object_storage = oci.object_storage.ObjectStorageClient(config={'region': 'uk-london-1'}, signer=signer)
     object_storage = oci.object_storage.ObjectStorageClient(config={}, signer=signer)
     namespace = object_storage.get_namespace().data
     #clear data in ADW
@@ -121,11 +115,12 @@ if __name__ == "__main__":
     streaming_ocid = streaming_summary[0]
     stream_service_endpoint = streaming_summary[1]
     # Create StreamClient
+    # Now service_endpoint is required field
     stream_client = oci.streaming.StreamClient(config={}, service_endpoint=stream_service_endpoint, signer=signer)
 
     #Get Cursor
-    group_cursor = get_cursor_by_group(stream_client, streaming_ocid, "adb-group", "adb-instance")
-    print(stream_client.get_group(streaming_ocid,"adb-group").data)
+    group_cursor = get_cursor_by_group(stream_client, streaming_ocid, "Your-group-name", "Your-instance")
+    print(stream_client.get_group(streaming_ocid,"Your-group-name").data)
     while True:
         try:
             consume_messages_streaming(stream_client, streaming_ocid, group_cursor)
